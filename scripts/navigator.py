@@ -20,8 +20,8 @@ from enum import Enum
 # threshold at which navigator switches
 # from trajectory to pose control
 NEAR_THRESH = .2
-AT_THRESH = 0.02
-AT_THRESH_THETA = 0.1
+AT_THRESH = 0.1
+AT_THRESH_THETA = 0.5
 
 # threshold to be far enough into the plan
 # to recompute it
