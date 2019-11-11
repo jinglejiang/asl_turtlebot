@@ -19,9 +19,16 @@ from enum import Enum
 # TODO: switch these to ROS params
 # threshold at which navigator switches
 # from trajectory to pose control
-NEAR_THRESH = .2
+# NEAR_THRESH = .2
+NEAR_THRESH = .3
+
 AT_THRESH = 0.1
 AT_THRESH_THETA = 0.5
+# AT_THRESH_THETA = 0.2
+# AT_THRESH = 0.05
+# AT_THRESH_THETA = 0.2
+
+
 
 # threshold to be far enough into the plan
 # to recompute it
@@ -46,9 +53,12 @@ KDX = 1.5
 KDY = 1.5
 
 # gains of the pose controller
-K1 = 0.4
-K2 = 0.8
-K3 = 0.8
+# K1 = 0.4
+# K2 = 0.8
+# K3 = 0.8
+K1 = 0.1
+K2 = 0.2
+K3 = 0.2
 
 # gains of the heading controller
 KP_TH = 1.
