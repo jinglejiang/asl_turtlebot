@@ -4,9 +4,11 @@ import rospy
 from gazebo_msgs.msg import ModelStates
 from sensor_msgs.msg import LaserScan, PointCloud, ChannelFloat32
 from geometry_msgs.msg import Twist, TransformStamped, Point32
+from visualization_msgs.msg import Marker
 import numpy as np
 import tf
 import tf2_ros
+from copy import deepcopy
 from collections import deque
 from HW4.ekf import EkfLocalization
 from HW4.ExtractLines import ExtractLines
@@ -97,6 +99,21 @@ class LocalizationVisualizer:
 
         if self.params.mc:
             self.particles_pub = rospy.Publisher('particle_filter', PointCloud, queue_size=10)
+
+        ##### JJIANG PLAY #######################
+        self.pos_sigma_pub = rospy.Publisher("pos_sigma", Marker, queue_size=10)
+        self.pos_sigma_marker = Marker()
+        self.pos_sigma_marker.header.frame_id = "EKF" if not self.params.mc else "MCL"
+        # self.pos_sigma_marker.header.stamp = rospy.Time.now()
+        self.pos_sigma_marker.type = 2    # sphere
+        # self.pos_sigma_marker.scale.x = .025
+        # self.pos_sigma_marker.scale.y = .025
+        # self.pos_sigma_marker.scale.z = .025
+        self.pos_sigma_marker.color.r = 0.0
+        self.pos_sigma_marker.color.g = 1.0
+        self.pos_sigma_marker.color.b = 0.0
+        self.pos_sigma_marker.color.a = 0.2
+        self.pos_sigma_marker.lifetime = rospy.Duration(1000)
 
     def scan_callback(self, msg):
         if self.EKF:
@@ -201,7 +218,18 @@ class LocalizationVisualizer:
                                                 NoiseParams["var_theta"],
                                                 NoiseParams["var_rho"])
             Z = np.vstack((alpha, r))
-            self.EKF.measurement_update(Z, C_AR)
+            pos_sigma = self.EKF.measurement_update(Z, C_AR)
+
+
+            #### JJIANG play ####
+            self.pos_sigma_pub = rospy.Publisher("pos_sigma", Marker, queue_size=10)
+            pos_sigma_marker=deepcopy(self.pos_sigma_marker)
+            pos_sigma_marker.header.stamp = rospy.Time.now()
+            pos_sigma_marker.scale.x = np.sqrt(pos_sigma[0,0])
+            pos_sigma_marker.scale.y = np.sqrt(pos_sigma[1,1])
+            pos_sigma_marker.scale.z = np.sqrt(pos_sigma[1,1])
+
+            self.pos_sigma_pub.publish(pos_sigma_marker)
 
             if self.params.mc:
                 particles.header.stamp = self.EKF_time
