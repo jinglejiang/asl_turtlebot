@@ -4,6 +4,7 @@
   <arg name="y_pos" default="-0.5"/>
   <arg name="z_pos" default="-1.5"/>
   <arg name="gui" default="false"/>
+  <arg name="rviz" default="true"/>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="use_sim_time" value="true"/>
@@ -21,5 +22,8 @@
     <param name="publish_frequency" type="double" value="30.0" />
   </node>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot)/rviz/localization.rviz"/>
+  <group if="$(arg rviz)">
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot)/rviz/localization.rviz"/>
+  </group>
+  
 </launch>

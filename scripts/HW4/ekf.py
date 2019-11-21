@@ -79,7 +79,7 @@ class Ekf(object):
         if z is None:
             # Don't update if measurement is invalid
             # (e.g., no line matches for line-based EKF localization)
-            return
+            return self.Sigma
 
         ########## Code starts here ##########
         # TODO: Update self.x, self.Sigma.
@@ -87,7 +87,7 @@ class Ekf(object):
         Kalman = self.Sigma.dot(H.T).dot(np.linalg.inv(S))
         self.x = self.x + Kalman.dot(z)
         self.Sigma = self.Sigma - Kalman.dot(S).dot(Kalman.T)
-
+        return self.Sigma
         ########## Code ends here ##########
 
     def measurement_model(self, z_raw, Q_raw):

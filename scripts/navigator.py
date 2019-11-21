@@ -31,6 +31,13 @@ class Navigator:
     It is the sole node that should publish to cmd_vel
     """
     def __init__(self):
+
+        # Robot limits
+        self.v_max = rospy.get_param("v_max", 0.2)    # maximum velocity
+        self.om_max = rospy.get_param("om_max", 0.4)   # maximum angular velocity
+
+        print "jjiang v_max is: " + str(self.v_max)
+
         rospy.init_node('turtlebot_navigator', anonymous=True)
         self.mode = Mode.IDLE
 
@@ -64,9 +71,9 @@ class Navigator:
         self.current_plan_duration = 0
         self.plan_start = [0.,0.]
         
-        # Robot limits
-        self.v_max = 0.2    # maximum velocity
-        self.om_max = 0.4   # maximum angular velocity
+        # # Robot limits
+        # self.v_max = 0.2    # maximum velocity
+        # self.om_max = 0.4   # maximum angular velocity
 
         self.v_des = 0.12   # desired cruising velocity
         self.theta_start_thresh = 0.05   # threshold in theta to start moving forward when path-following
@@ -110,10 +117,16 @@ class Navigator:
         print "finished init"
         
     def dyn_cfg_callback(self, config, level):
-        rospy.loginfo("Reconfigure Request: k1:{k1}, k2:{k2}, k3:{k3}".format(**config))
+        rospy.loginfo("Reconfigure Request: k1:{k1}, k2:{k2}, k3:{k3}, v_max:{v_max}".format(**config))
         self.pose_controller.k1 = config["k1"]
         self.pose_controller.k2 = config["k2"]
         self.pose_controller.k3 = config["k3"]
+        self.v_max = config["v_max"]
+
+        # TODO( delete after)
+        self.traj_controller.V_max = self.v_max
+        self.pose_controller.V_max = self.v_max
+
         return config
 
     def cmd_nav_callback(self, data):
