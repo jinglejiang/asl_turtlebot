@@ -1,0 +1,22 @@
+ <launch>
+    <arg name="om_max" default="0.8"/>
+    <arg name="v_max" default="0.3"/>
+
+
+   
+    <node pkg="asl_turtlebot" type="detector_viz.py" name="turtlebot_detector_viz" />
+
+
+    <node pkg="asl_turtlebot" type="navigator.py" name="asl_navigator" output="screen">
+        <param name="om_max" value="$(arg om_max)"/>
+        <param name="v_max" value="$(arg v_max)"/>
+    
+    </node>
+
+    <node pkg="asl_turtlebot" type="supervisor_nav.py" name="supervisor_nav" />
+
+    <node pkg="asl_turtlebot" type="distination_viz.py" name="target_viz_for_rviz" />
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find aa274_s2)/rviz/my_nav.rviz"/>
+
+</launch>

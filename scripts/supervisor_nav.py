@@ -11,10 +11,10 @@ from enum import Enum
 
 # if sim is True/using gazebo, therefore want to subscribe to /gazebo/model_states\
 # otherwise, they will use a TF lookup (hw2+)
-use_gazebo = rospy.get_param("sim")
+use_gazebo = False #rospy.get_param("sim")
 
 # if using gmapping, you will have a map frame. otherwise it will be odom frame
-mapping = rospy.get_param("map")
+mapping = True #rospy.get_param("map")
 
 
 # threshold at which we consider the robot at a location
@@ -25,7 +25,7 @@ THETA_EPS = .3
 STOP_TIME = 10
 
 # minimum distance from a stop sign to obey it
-STOP_MIN_DIST = .5
+STOP_MIN_DIST = 3
 
 # time taken to cross an intersection
 CROSSING_TIME = 3
