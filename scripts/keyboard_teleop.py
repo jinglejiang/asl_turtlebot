@@ -83,6 +83,7 @@ def getKey():
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
     return key
 
+
 speed = 1
 turn = 1
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import rospy
 
 import numpy as np
@@ -13,6 +14,7 @@ DELTA_THRES = 0.1
 class PoseController:
     """ Pose stabilization controller """
     def __init__(self, k1, k2, k3, V_max=0.5, om_max=1):
+        
         self.k1 = k1
         self.k2 = k2
         self.k3 = k3
@@ -23,7 +25,6 @@ class PoseController:
         self.pub_alpha = rospy.Publisher('/controller/alpha', Float64, queue_size=10)
         self.pub_delta = rospy.Publisher('/controller/delta', Float64, queue_size=10)
         self.pub_rho = rospy.Publisher('/controller/rho', Float64, queue_size=10)
-
 
     def load_goal(self, x_g, y_g, th_g):
         """ Loads in a new goal position """

@@ -9,6 +9,7 @@ import numpy as np
 import tf
 from copy import deepcopy
 import tf2_ros
+from copy import deepcopy
 from collections import deque
 from HW4.ekf import EkfLocalization
 from HW4.ExtractLines import ExtractLines
@@ -218,7 +219,18 @@ class LocalizationVisualizer:
                                                 NoiseParams["var_theta"],
                                                 NoiseParams["var_rho"])
             Z = np.vstack((alpha, r))
-            self.EKF.measurement_update(Z, C_AR)
+            pos_sigma = self.EKF.measurement_update(Z, C_AR)
+
+
+            #### JJIANG play ####
+            self.pos_sigma_pub = rospy.Publisher("pos_sigma", Marker, queue_size=10)
+            pos_sigma_marker=deepcopy(self.pos_sigma_marker)
+            pos_sigma_marker.header.stamp = rospy.Time.now()
+            pos_sigma_marker.scale.x = np.sqrt(pos_sigma[0,0])
+            pos_sigma_marker.scale.y = np.sqrt(pos_sigma[1,1])
+            pos_sigma_marker.scale.z = np.sqrt(pos_sigma[1,1])
+
+            self.pos_sigma_pub.publish(pos_sigma_marker)
 
 
             #### JJIANG play ####

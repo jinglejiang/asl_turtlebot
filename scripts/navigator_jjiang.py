@@ -2,8 +2,8 @@
 
 import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
-from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
-from std_msgs.msg import Float32MultiArray, String
+from geometry_msgs.msg import Twist, Pose2D, PoseStamped
+from std_msgs.msg import String
 import tf
 import numpy as np
 from numpy import linalg
@@ -15,8 +15,48 @@ import matplotlib.pyplot as plt
 from controllers import PoseController, TrajectoryTracker, HeadingController
 from enum import Enum
 
-from dynamic_reconfigure.server import Server
-from asl_turtlebot.cfg import NavigatorConfig
+# TODO: switch these to ROS params
+# threshold at which navigator switches
+# from trajectory to pose control
+NEAR_THRESH = .2
+AT_THRESH = 0.1
+AT_THRESH_THETA = 0.5
+
+# threshold to be far enough into the plan
+# to recompute it
+START_POS_THRESH = .2
+
+# thereshold in theta to start moving forward when path following
+THETA_START_THRESH = 0.5
+
+# maximum velocity
+V_MAX = .2
+
+# maximim angular velocity
+OM_MAX = .4
+
+# desired crusing velocity
+V_DES = 0.12
+
+# gains of the path follower
+KPX = .5
+KPY = .5
+KDX = 1.5
+KDY = 1.5
+
+# gains of the pose controller
+K1 = 0.4
+K2 = 0.8
+K3 = 0.8
+
+# gains of the heading controller
+KP_TH = 1.
+
+
+
+# smoothing condition (see splrep documentation)
+SPLINE_ALPHA = .05
+TRAJ_DT = 0.1
 
 # state machine modes, not all implemented
 class Mode(Enum):
@@ -31,13 +71,6 @@ class Navigator:
     It is the sole node that should publish to cmd_vel
     """
     def __init__(self):
-
-        # Robot limits
-        self.v_max = rospy.get_param("v_max", 0.2)    # maximum velocity
-        self.om_max = rospy.get_param("om_max", 0.4)   # maximum angular velocity
-
-        print "jjiang v_max is: " + str(self.v_max)
-
         rospy.init_node('turtlebot_navigator', anonymous=True)
         self.mode = Mode.IDLE
 
@@ -71,9 +104,9 @@ class Navigator:
         self.current_plan_duration = 0
         self.plan_start = [0.,0.]
         
-        # # Robot limits
-        # self.v_max = 0.2    # maximum velocity
-        # self.om_max = 0.4   # maximum angular velocity
+        # Robot limits
+        self.v_max = 0.2    # maximum velocity
+        self.om_max = 0.4   # maximum angular velocity
 
         self.v_des = 0.12   # desired cruising velocity
         self.theta_start_thresh = 0.05   # threshold in theta to start moving forward when path-following
@@ -82,7 +115,7 @@ class Navigator:
         # threshold at which navigator switches from trajectory to pose control
         self.near_thresh = 0.2
         self.at_thresh = 0.02
-        self.at_thresh_theta = 0.1
+        self.at_thresh_theta = 0.05
 
         # trajectory smoothing
         self.spline_alpha = 0.15
@@ -117,11 +150,10 @@ class Navigator:
         print "finished init"
         
     def dyn_cfg_callback(self, config, level):
-        rospy.loginfo("Reconfigure Request: k1:{k1}, k2:{k2}, k3:{k3}, v_max:{v_max}".format(**config))
+        rospy.loginfo("Reconfigure Request: k1:{k1}, k2:{k2}, k3:{k3}".format(**config))
         self.pose_controller.k1 = config["k1"]
         self.pose_controller.k2 = config["k2"]
         self.pose_controller.k3 = config["k3"]
-        self.v_max = config["v_max"]
         return config
 
     def cmd_nav_callback(self, data):
@@ -176,15 +208,14 @@ class Navigator:
         returns whether the robot is close enough in position to the goal to
         start using the pose controller
         """
-        return (abs(self.x-self.x_g)<self.near_thresh and abs(self.y-self.y_g)<self.near_thresh)
+        return linalg.norm(np.array([self.x-self.x_g, self.y-self.y_g])) < self.near_thresh
 
     def at_goal(self):
         """
         returns whether the robot has reached the goal position with enough
         accuracy to return to idle state
         """
-        return (abs(self.x-self.x_g)<self.at_thresh and abs(self.y-self.y_g)<self.at_thresh
-                    and abs(wrapToPi(self.theta - self.theta_g))<self.at_thresh_theta)
+        return (linalg.norm(np.array([self.x-self.x_g, self.y-self.y_g])) < self.near_thresh and abs(wrapToPi(self.theta - self.theta_g)) < self.at_thresh_theta)
 
     def aligned(self):
         """
@@ -194,8 +225,7 @@ class Navigator:
         return (abs(wrapToPi(self.theta - self.th_init)) < self.theta_start_thresh)
         
     def close_to_plan_start(self):
-        return (abs(self.x - self.plan_start[0])<self.start_pos_thresh 
-                    and abs(self.y - self.plan_start[1])<self.start_pos_thresh)
+        return (abs(self.x - self.plan_start[0]) < self.start_pos_thresh and abs(self.y - self.plan_start[1]) < self.start_pos_thresh)
 
     def snap_to_grid(self, x):
         return (self.plan_resolution*round(x[0]/self.plan_resolution), self.plan_resolution*round(x[1]/self.plan_resolution))

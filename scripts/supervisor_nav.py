@@ -65,6 +65,12 @@ class Supervisor:
         # subscribers
         # stop sign detector
         rospy.Subscriber('/detector/stop_sign', DetectedObject, self.stop_sign_detected_callback)
+
+
+        # # any food (basically any interesting object othan than stop sign) detector
+        # rospy.Subscriber('/detector/stop_sign', DetectedObject, self.stop_sign_detected_callback)
+
+
         # high-level navigation pose
         rospy.Subscriber('/nav_pose', Pose2D, self.nav_pose_callback)
         # if using gazebo, we have access to perfect state
