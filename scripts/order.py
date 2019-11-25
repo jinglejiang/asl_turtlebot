@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""process_request.py : process keyboard input and publish to topic '/fruits', giving the names for the fruits to collect
+"""order.py : process keyboard input and publish to topic '/fruits', giving the names for the fruits to collect
 rospy.Subscriber('/fruits', Int32MultiArray, self.fruits_cmd_callback)
 """
 
