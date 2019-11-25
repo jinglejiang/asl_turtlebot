@@ -56,6 +56,7 @@ class Supervisor:
         self.x = 0
         self.y = 0
         self.theta = 0
+        self.home = (self.x, self.y, self.theta)
         self.mode = Mode.IDLE
         self.last_mode_printed = None
         self.trans_listener = tf.TransformListener()
@@ -193,9 +194,9 @@ class Supervisor:
         vel_g_msg = Twist()
         self.cmd_vel_publisher.publish(vel_g_msg)
 
-    def close_to(self,x,y,theta):
+    def close_to_home(self):
         """ checks if the robot is at a pose within some threshold """
-
+        x, y, theta = self.home
         return (abs(x-self.x)<POS_EPS and abs(y-self.y)<POS_EPS and abs(theta-self.theta)<THETA_EPS)
 
     def close_to_some_fruit(self):
@@ -225,7 +226,10 @@ class Supervisor:
         if closest_fruit_location[0] == self.x_g and closest_fruit_location[1] == self.y_g:
             # this fruit is exactly the fruit we are looking for
             # directly go to next goal
-            self.x_g, self.y_g, self.theta_g = self.goals.pop()
+            if len(self.goals) > 0:
+                self.x_g, self.y_g, self.theta_g = self.goals.pop()
+            else:
+                self.x_g, self.y_g, self.theta_g = self.home # return to home location
         else:
             # remove this fruit from goals
             for each_goal in self.goals:
@@ -308,7 +312,7 @@ class Supervisor:
                 self.nav_to_pose()
 
         elif self.mode == Mode.NAV:
-            if self.close_to(self.x_g,self.y_g,self.theta_g):
+            if self.x_g == self.home[0] and self.y_g == self.home[1] and self.close_to_home:
                 self.mode = Mode.IDLE
             else:
                 flag, fruit_name = self.close_to_some_fruit()
