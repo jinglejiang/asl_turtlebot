@@ -20,12 +20,14 @@ mapping = True #rospy.get_param("map")
 # threshold at which we consider the robot at a location
 POS_EPS = .1
 THETA_EPS = .3
+FRUIT_VICINITY = .5 # TODO change parameter. What is the unit used??
 
 # time to stop at a stop sign
 STOP_TIME = 10
 
 # minimum distance from a stop sign to obey it
 STOP_MIN_DIST = 3
+FRUIT_STOP_MIN_DIST = 3
 
 # time taken to cross an intersection
 CROSSING_TIME = 3
@@ -38,6 +40,8 @@ class Mode(Enum):
     CROSS = 4
     NAV = 5
     MANUAL = 6
+    FRUITSTOP = 7
+    EXPLORE = 8
 
 
 print "supervisor settings:\n"
@@ -52,6 +56,7 @@ class Supervisor:
         self.x = 0
         self.y = 0
         self.theta = 0
+        self.home = (self.x, self.y, self.theta)
         self.mode = Mode.IDLE
         self.last_mode_printed = None
         self.trans_listener = tf.TransformListener()
@@ -78,7 +83,13 @@ class Supervisor:
             rospy.Subscriber('/gazebo/model_states', ModelStates, self.gazebo_callback)
         # we can subscribe to nav goal click
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
-        
+
+        # subscribe to command line input of starting to gather food
+        # TODO create a publisher of list of (name, x, y) representing all possible fruits
+        rospy.Subscriber('/fruit_locations', Int32MultiArray, self.record_fruit_locations_callback) # fruit locations to record
+        # TODO create a publisher of list of ints, representing fruits to deliver
+        rospy.Subscriber('/fruits', Int32MultiArray, self.fruits_cmd_callback) # delivery requests
+            
     def gazebo_callback(self, msg):
         pose = msg.pose[msg.name.index("turtlebot3_burger")]
         twist = msg.twist[msg.name.index("turtlebot3_burger")]
@@ -117,6 +128,18 @@ class Supervisor:
         self.y_g = msg.y
         self.theta_g = msg.theta
         self.mode = Mode.NAV
+    
+    def record_fruit_locations_callback(self, msg):
+        """
+        Record fruit locations when msg is published.
+        """
+        self.num_fruits = msg.layout.dim[0]
+        self.fruits = msg.data # int32 array (list) of dimension (n, 3)
+        # we need to define the structure for msg to include fruit name and location
+        # self.locations: a dict of tuples, self.locations[fruit_name] = x, y, theta
+        self.locations = dict()
+        for name, x, y in fruits:
+            self.locations[name] = (x, y, 0.) # always set goal theta to be 0; TODO unsure about this
 
     def stop_sign_detected_callback(self, msg):
         """ callback for when the detector has found a stop sign. Note that
@@ -128,6 +151,22 @@ class Supervisor:
         # if close enough and in nav mode, stop
         if dist > 0 and dist < STOP_MIN_DIST and self.mode == Mode.NAV:
             self.init_stop_sign()
+    
+    def fruits_cmd_callback(self, msg):
+        """
+        Rui: delivery requests sent, add the requested fruits to self.goals.
+        Then, start navigating to the first fruit.
+        """
+        self.num_goals = msg.layout.dim[0] # fruits to collect
+        fruits_to_collect = msg.data # array of fruit names (string)
+        self.mode = Mode.NAV
+        self.goals = []
+        self.goal_names = []
+        for fruit_name in fruits_to_collect:
+            self.goals.append(self.locations[fruit_name]) # a tuple (x, y, theta)
+            self.goal_names.append(fruit_name)
+        # set a fruit as current goal
+        self.x_g, self.y_g, self.theta_g = self.goals.pop()
 
     def go_to_pose(self):
         """ sends the current desired pose to the pose controller """
@@ -155,16 +194,49 @@ class Supervisor:
         vel_g_msg = Twist()
         self.cmd_vel_publisher.publish(vel_g_msg)
 
-    def close_to(self,x,y,theta):
+    def close_to_home(self):
         """ checks if the robot is at a pose within some threshold """
-
+        x, y, theta = self.home
         return (abs(x-self.x)<POS_EPS and abs(y-self.y)<POS_EPS and abs(theta-self.theta)<THETA_EPS)
+
+    def close_to_some_fruit(self):
+        """
+        returns: flag, true or false; fruit_name
+        when the bot is getting close to a fruit requested
+        """
+        for loc, name in zip(self.goals, self.goal_names):
+            if (abs(x-self.x) < FRUIT_VICINITY and abs(y-self.y) < FRUIT_VICINITY:
+                return True, name
+        return False, None
 
     def init_stop_sign(self):
         """ initiates a stop sign maneuver """
 
         self.stop_sign_start = rospy.get_rostime()
         self.mode = Mode.STOP
+    
+    def init_stop_fruit(self, fruit_name):
+        """
+        Rui: stop for a fruit. Change goal for next step in the mean time.
+        """
+        self.stop_fruit_start = rospy.get_rostime()
+        self.mode = Mode.FRUITSTOP
+        # pop this fruit, which is already collected
+        closest_fruit_location = self.locations[fruit_name]
+        if closest_fruit_location[0] == self.x_g and closest_fruit_location[1] == self.y_g:
+            # this fruit is exactly the fruit we are looking for
+            # directly go to next goal
+            if len(self.goals) > 0:
+                self.x_g, self.y_g, self.theta_g = self.goals.pop()
+            else:
+                self.x_g, self.y_g, self.theta_g = self.home # return to home location
+        else:
+            # remove this fruit from goals
+            for each_goal in self.goals:
+                if each_goal[0] == closest_fruit_location[0] and each_goal[1] == closest_fruit_location[1]:
+                    self.goals.remove(each_goal)
+                    break
+            # do not need to change current goal, because it is not reached!
 
     def has_stopped(self):
         """ checks if stop sign maneuver is over """
@@ -204,7 +276,10 @@ class Supervisor:
             self.last_mode_printed = self.mode
 
         # checks wich mode it is in and acts accordingly
-        if self.mode == Mode.IDLE:
+        if self.mode == Mode.EXPLORE:
+            pass
+
+        elif self.mode == Mode.IDLE:
             # send zero velocity
             self.stay_idle()
 
@@ -220,7 +295,14 @@ class Supervisor:
             if self.has_stopped():
                 self.init_crossing()
             else:
-                self.stay_idle()
+                self.stay_idle() # zero velocity
+        
+        elif self.mode == Mode.FRUITSTOP:
+            # at a stop sign
+            if self.has_stopped():
+                self.mode = Mode.CROSS
+            else:
+                self.stay_idle() # zero velocity
 
         elif self.mode == Mode.CROSS:
             # crossing an intersection
@@ -230,17 +312,25 @@ class Supervisor:
                 self.nav_to_pose()
 
         elif self.mode == Mode.NAV:
-            if self.close_to(self.x_g,self.y_g,self.theta_g):
+            if self.x_g == self.home[0] and self.y_g == self.home[1] and self.close_to_home:
                 self.mode = Mode.IDLE
             else:
-                self.nav_to_pose()
+                flag, fruit_name = self.close_to_some_fruit()
+                if flag:
+                    # Rui: stop for this fruit
+                    self.init_stop_fruit(fruit_name)
+                else:
+                    self.nav_to_pose()
 
         else:
             raise Exception('This mode is not supported: %s'
                 % str(self.mode))
 
     def run(self):
+        # explore
         rate = rospy.Rate(10) # 10 Hz
+        # TODO add explore function
+        explore() # ending condition: receives some command
         while not rospy.is_shutdown():
             self.loop()
             rate.sleep()
