@@ -13,7 +13,7 @@
     
     </node>
 
-    <node pkg="asl_turtlebot" type="supervisor_nav.py" name="supervisor_nav" />
+    <node pkg="asl_turtlebot" type="supervisor_nav.py" nameFFFFF="supervisor_nav" />
 
     <node pkg="asl_turtlebot" type="distination_viz.py" name="target_viz_for_rviz" />
 
