@@ -73,5 +73,9 @@
 
     <node pkg="asl_turtlebot" type="distination_viz.py" name="target_viz_for_rviz" />
 
+    <node name="costmap_node" pkg="costmap_2d" type="costmap_2d_node" output="screen" clear_params="true">
+    
+    </node>
+
     
 </launch>

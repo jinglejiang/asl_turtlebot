@@ -3,7 +3,7 @@
   <arg name="x_pos" default="0.0"/>
   <arg name="y_pos" default="0.0"/>
   <arg name="z_pos" default="0.0"/>
-  <arg name="gui" default="true"/> 
+  <arg name="gui" default="false"/> 
 
 
   <rosparam param="sim">true</rosparam>
@@ -20,6 +20,8 @@
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="10.0" />
   </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="velodyne_broadcaster" args="0.0175 0 0.215 0 0 0 1 base_footprint velodyne 300" />
 
   <node pkg="gmapping" type="slam_gmapping" name="turtlebot3_slam_gmapping" output="screen">
     <param name="base_frame" value="base_footprint"/>
