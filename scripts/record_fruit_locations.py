@@ -1,5 +1,7 @@
-# usr/bin/env python
-""" record_fruit_locations.py: record locations of the fruits if detected.
+#!/usr/bin/env python
+
+"""record_fruit_locations.py: record locations of the fruits
+if detected.
 """
 import rospy
 from gazebo_msgs.msg import ModelStates
@@ -8,7 +10,8 @@ import tf
 
 
 FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad']
-use_gazebo = rospy.get_param("sim")
+use_gazebo = True #rospy.get_param("sim")
+
 
 class Record:
     def __init__(self):
@@ -41,11 +44,11 @@ class Record:
     def fruit_detected_callback(self, msg):
         dst = msg.distance
         fruit_name = msg.name
-        self.fruit_locations[name] = [self.x, self.y, self.theta]
+        self.fruit_locations[fruit_name] = [self.x, self.y, self.theta]
         rospy.set_param('fruit_locations', self.fruit_locations)
 
 
-    def loop():
+    def loop(self):
         if not use_gazebo:
             try:
                 origin_frame = "/map" if mapping else "/odom"
@@ -56,7 +59,7 @@ class Record:
                 self.theta = euler[2]
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 pass
-    def run():
+    def run(self):
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
             self.loop()
