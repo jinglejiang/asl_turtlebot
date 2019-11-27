@@ -66,7 +66,8 @@
         <param name="llsamplestep" value="0.01"/>
         <param name="lasamplerange" value="0.005"/>
         <param name="lasamplestep" value="0.005"/>
-      </node>
+    </node>
+
 
 
     <node pkg="asl_turtlebot" type="navigator.py" name="asl_navigator" output="screen">
@@ -81,4 +82,6 @@
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find aa274_s2)/rviz/my_nav.rviz"/>
 
+    <node name="transformer_to_click" pkg="asl_turtlebot" type="move_base_to_rviz_2D_nav_click.py"/>
+    
 </launch>

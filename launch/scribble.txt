@@ -1,0 +1,1 @@
+rosrun explore_lite explore robot_base_frame:=base_footprint costmap_topic:=map visualize:=true

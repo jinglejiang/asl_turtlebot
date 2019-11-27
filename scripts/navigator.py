@@ -80,8 +80,8 @@ class Navigator:
         self.start_pos_thresh = 0.2     # threshold to be far enough into the plan to recompute it
 
         # threshold at which navigator switches from trajectory to pose control
-        self.near_thresh = 0.2
-        self.at_thresh = 0.02
+        self.near_thresh = 0.5
+        self.at_thresh = 0.06
         self.at_thresh_theta = 0.1
 
         # trajectory smoothing
@@ -106,6 +106,8 @@ class Navigator:
         self.nav_smoothed_path_rej_pub = rospy.Publisher('/cmd_smoothed_path_rejected', Path, queue_size=10)
         self.nav_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
+        self.costmap_pub = rospy.Publisher('/costmap', OccupancyGrid, queue_size=10)
+
         self.trans_listener = tf.TransformListener()
 
         self.cfg_srv = Server(NavigatorConfig, self.dyn_cfg_callback)
@@ -128,6 +130,7 @@ class Navigator:
         """
         loads in goal if different from current goal, and replans
         """
+        print "cmd_nav_callback recieved: " + str(data)
         if data.x != self.x_g or data.y != self.y_g or data.theta != self.theta_g:
             self.x_g = data.x
             self.y_g = data.y
@@ -147,6 +150,8 @@ class Navigator:
         """
         receives new map info and updates the map
         """
+        self.costmap_pub.publish(msg)
+
         self.map_probs = msg.data
         # if we've received the map metadata and have a way to update it:
         if self.map_width>0 and self.map_height>0 and len(self.map_probs)>0:

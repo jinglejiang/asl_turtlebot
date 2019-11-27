@@ -68,10 +68,10 @@ def processRequest():
     fruits_to_collect.layout.dim.append(dim)    
 
 
-    while not rospy.is_shutdown():
-        fruits_publisher.publish(fruits_to_collect)
-        rospy.loginfo(fruits_to_collect)       
-        rate.sleep()
+    #while not rospy.is_shutdown():
+    fruits_publisher.publish(fruits_to_collect)
+    rospy.loginfo(fruits_to_collect)       
+    #rate.sleep()
     # else:
     #     rospy.loginfo("ROS service not found!")    
 

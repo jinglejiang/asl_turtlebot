@@ -69,5 +69,6 @@
   <node pkg="asl_turtlebot" type="gazebo_plot.py" name="gazebo_plot" />
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot)/rviz/signs_gmapping.rviz"/>
+  <node pkg="asl_turtlebot" type="supervisor.py" name="supervisor" />
   
 </launch>
