@@ -87,15 +87,14 @@ class Supervisor:
         # we can subscribe to nav goal click
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
 
-        # subscribe to command line input of starting to gather food
-        # TODO create a publisher of list of (name, x, y) representing all possible fruits        
-	    # rospy.Subscriber('/fruit_locations', Int32MultiArray, self.record_fruit_locations_callback) # fruit locations to record
-        # TODO create a publisher of list of ints, representing fruits to deliver
+        # get fruit locations list
         if use_gazebo:
+            # gazebo hardcode simulation
             self.locations = {1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
         else:
-            self.locations = {1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
-        rospy.Subscriber('/fruits', Int32MultiArray, self.fruits_cmd_callback) # delivery requests
+            self.locations = rospy.get_param('fruit_locations')#{1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
+        # subscribe cmd input containing fruits to deliver, "apple,banana,..."
+        rospy.Subscriber('/delivery_request', String, self.fruits_cmd_callback)
             
     def gazebo_callback(self, msg):
         pose = msg.pose[msg.name.index("turtlebot3_burger")]
@@ -136,17 +135,17 @@ class Supervisor:
         self.theta_g = msg.theta
         self.mode = Mode.NAV
     
-    def record_fruit_locations_callback(self, msg):
-        """
-        Record fruit locations when msg is published.
-        """
-        self.num_fruits = msg.layout.dim[0]
-        self.fruits = msg.data # int32 array (list) of dimension (n, 3)
-        # we need to define the structure for msg to include fruit name and location
-        # self.locations: a dict of tuples, self.locations[fruit_name] = x, y, theta
-        self.locations = dict()
-        for name, x, y in fruits:
-            self.locations[name] = (x, y, 0.) # always set goal theta to be 0; TODO unsure about this
+    # def record_fruit_locations_callback(self, msg):
+    #     """
+    #     Record fruit locations when msg is published.
+    #     """
+    #     self.num_fruits = msg.layout.dim[0]
+    #     self.fruits = msg.data # int32 array (list) of dimension (n, 3)
+    #     # we need to define the structure for msg to include fruit name and location
+    #     # self.locations: a dict of tuples, self.locations[fruit_name] = x, y, theta
+    #     self.locations = dict()
+    #     for name, x, y in fruits:
+    #         self.locations[name] = (x, y, 0.) # always set goal theta to be 0; TODO unsure about this
 
     def stop_sign_detected_callback(self, msg):
         """ callback for when the detector has found a stop sign. Note that
@@ -164,14 +163,19 @@ class Supervisor:
         Rui: delivery requests sent, add the requested fruits to self.goals.
         Then, start navigating to the first fruit.
         """
-        self.num_goals = msg.layout.dim[0] # fruits to collect
-        fruits_to_collect = msg.data # array of fruit names (string)
+
+        fruits_to_collect = msg.split(',')
+        #self.num_goals = len(fruits_to_collect) #msg.layout.dim[0] # fruits to collect
+        # fruits_to_collect = msg.data # array of fruit names (string)
         self.mode = Mode.NAV
         self.goals = []
         self.goal_names = []
         for fruit_name in fruits_to_collect:
-            self.goals.append(self.locations[fruit_name]) # a tuple (x, y, theta)
-            self.goal_names.append(fruit_name)
+            if self.locations.has_key(fruit_name):
+                self.goals.append(self.locations[fruit_name]) # a tuple (x, y, theta)
+                self.goal_names.append(fruit_name)
+            else:
+                rospy.loginfo("location of"+fruit_name+"not loaded in exploration")
         # set a fruit as current goal
         # self.x_g, self.y_g, self.theta_g = self.goals.pop()
         self.x_g, self.y_g, self.theta_g = self.goals[-1]
