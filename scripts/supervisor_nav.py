@@ -90,7 +90,7 @@ class Supervisor:
         # get fruit locations list
         if use_gazebo:
             # gazebo hardcode simulation
-            self.locations = {1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
+            self.locations = {'apple':(3, 1, 0), 'banana':(1.5, 2.7, 0), 'cake':(3, 2, 0)}
         else:
             self.locations = rospy.get_param('fruit_locations')#{1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
         # subscribe cmd input containing fruits to deliver, "apple,banana,..."
@@ -164,7 +164,8 @@ class Supervisor:
         Then, start navigating to the first fruit.
         """
 
-        fruits_to_collect = msg.split(',')
+        fruits_to_collect = msg.data.split(',')
+        print(fruits_to_collect)
         #self.num_goals = len(fruits_to_collect) #msg.layout.dim[0] # fruits to collect
         # fruits_to_collect = msg.data # array of fruit names (string)
         self.mode = Mode.NAV
@@ -175,7 +176,7 @@ class Supervisor:
                 self.goals.append(self.locations[fruit_name]) # a tuple (x, y, theta)
                 self.goal_names.append(fruit_name)
             else:
-                rospy.loginfo("location of"+fruit_name+"not loaded in exploration")
+                rospy.loginfo("location of "+fruit_name+" not loaded in exploration")
         # set a fruit as current goal
         # self.x_g, self.y_g, self.theta_g = self.goals.pop()
         self.x_g, self.y_g, self.theta_g = self.goals[-1]
