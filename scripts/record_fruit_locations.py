@@ -9,11 +9,13 @@ from asl_turtlebot.msg import DetectedObject
 import tf
 
 
-FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad']
-use_gazebo = True #rospy.get_param("sim")
+FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad', 'bottle']
+use_gazebo = rospy.get_param("sim")
 
 
 class Record:
+    """record fruit locations if detected"""
+
     def __init__(self):
         rospy.init_node('record_fruit_locations', anonymous=True)
         self.x = 0
@@ -44,7 +46,7 @@ class Record:
     def fruit_detected_callback(self, msg):
         dst = msg.distance
         fruit_name = msg.name
-        self.fruit_locations[fruit_name] = [self.x, self.y, self.theta]
+        self.fruit_locations[fruit_name] = (self.x, self.y, self.theta)
         rospy.set_param('fruit_locations', self.fruit_locations)
 
 
