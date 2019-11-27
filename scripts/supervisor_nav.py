@@ -2,7 +2,7 @@
 
 import rospy
 from gazebo_msgs.msg import ModelStates
-from std_msgs.msg import Float32MultiArray, String
+from std_msgs.msg import Float32MultiArray, String, Int32MultiArray
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
 from asl_turtlebot.msg import DetectedObject
 import tf
@@ -11,7 +11,7 @@ from enum import Enum
 
 # if sim is True/using gazebo, therefore want to subscribe to /gazebo/model_states\
 # otherwise, they will use a TF lookup (hw2+)
-use_gazebo = False #rospy.get_param("sim")
+use_gazebo = True #rospy.get_param("sim")
 
 # if using gmapping, you will have a map frame. otherwise it will be odom frame
 mapping = True #rospy.get_param("map")
@@ -55,6 +55,9 @@ class Supervisor:
         # initialize variables
         self.x = 0
         self.y = 0
+        if use_gazebo:
+            self.x = 3.35
+            self.y = 2.4
         self.theta = 0
         self.home = (self.x, self.y, self.theta)
         self.mode = Mode.IDLE
@@ -85,9 +88,13 @@ class Supervisor:
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
 
         # subscribe to command line input of starting to gather food
-        # TODO create a publisher of list of (name, x, y) representing all possible fruits
-        rospy.Subscriber('/fruit_locations', Int32MultiArray, self.record_fruit_locations_callback) # fruit locations to record
+        # TODO create a publisher of list of (name, x, y) representing all possible fruits        
+	    # rospy.Subscriber('/fruit_locations', Int32MultiArray, self.record_fruit_locations_callback) # fruit locations to record
         # TODO create a publisher of list of ints, representing fruits to deliver
+        if use_gazebo:
+            self.locations = {1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
+        else:
+            self.locations = {1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
         rospy.Subscriber('/fruits', Int32MultiArray, self.fruits_cmd_callback) # delivery requests
             
     def gazebo_callback(self, msg):
@@ -166,7 +173,9 @@ class Supervisor:
             self.goals.append(self.locations[fruit_name]) # a tuple (x, y, theta)
             self.goal_names.append(fruit_name)
         # set a fruit as current goal
-        self.x_g, self.y_g, self.theta_g = self.goals.pop()
+        # self.x_g, self.y_g, self.theta_g = self.goals.pop()
+        self.x_g, self.y_g, self.theta_g = self.goals[-1]
+        # rospy.loginfo(self.goals)
 
     def go_to_pose(self):
         """ sends the current desired pose to the pose controller """
@@ -205,7 +214,8 @@ class Supervisor:
         when the bot is getting close to a fruit requested
         """
         for loc, name in zip(self.goals, self.goal_names):
-            if (abs(x-self.x) < FRUIT_VICINITY and abs(y-self.y) < FRUIT_VICINITY:
+            x, y, theta = loc
+            if abs(x-self.x) < FRUIT_VICINITY and abs(y-self.y) < FRUIT_VICINITY:
                 return True, name
         return False, None
 
@@ -226,8 +236,9 @@ class Supervisor:
         if closest_fruit_location[0] == self.x_g and closest_fruit_location[1] == self.y_g:
             # this fruit is exactly the fruit we are looking for
             # directly go to next goal
-            if len(self.goals) > 0:
-                self.x_g, self.y_g, self.theta_g = self.goals.pop()
+            if len(self.goals) > 1:
+                self.goals.pop()
+                self.x_g, self.y_g, self.theta_g = self.goals[-1]
             else:
                 self.x_g, self.y_g, self.theta_g = self.home # return to home location
         else:
@@ -242,7 +253,12 @@ class Supervisor:
         """ checks if stop sign maneuver is over """
 
         return (self.mode == Mode.STOP and (rospy.get_rostime()-self.stop_sign_start)>rospy.Duration.from_sec(STOP_TIME))
-        
+
+    def has_fruit_stopped(self):
+        """ checks if stop fruit maneuver is over """
+
+        return (self.mode == Mode.FRUITSTOP and (rospy.get_rostime()-self.stop_fruit_start)>rospy.Duration.from_sec(STOP_TIME))
+
     def init_crossing(self):
         """ initiates an intersection crossing maneuver """
 
@@ -299,8 +315,9 @@ class Supervisor:
         
         elif self.mode == Mode.FRUITSTOP:
             # at a stop sign
-            if self.has_stopped():
-                self.mode = Mode.CROSS
+            if self.has_fruit_stopped():
+                # self.mode = Mode.CROSS
+                self.init_crossing()
             else:
                 self.stay_idle() # zero velocity
 
@@ -330,7 +347,7 @@ class Supervisor:
         # explore
         rate = rospy.Rate(10) # 10 Hz
         # TODO add explore function
-        explore() # ending condition: receives some command
+        # explore() # ending condition: receives some command
         while not rospy.is_shutdown():
             self.loop()
             rate.sleep()
