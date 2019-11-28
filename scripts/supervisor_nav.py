@@ -11,7 +11,7 @@ from enum import Enum
 
 # if sim is True/using gazebo, therefore want to subscribe to /gazebo/model_states\
 # otherwise, they will use a TF lookup (hw2+)
-use_gazebo = True #rospy.get_param("sim")
+use_gazebo = False#rospy.get_param("sim")
 
 # if using gmapping, you will have a map frame. otherwise it will be odom frame
 mapping = True #rospy.get_param("map")

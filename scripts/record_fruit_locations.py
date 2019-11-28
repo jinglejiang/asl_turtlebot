@@ -9,7 +9,7 @@ from asl_turtlebot.msg import DetectedObject
 import tf
 
 
-FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad', 'bottle', 'stop_sign']
+FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad', 'bottle', 'stop_sign', 'cup']
 use_gazebo = rospy.get_param("sim")
 
 
@@ -22,7 +22,7 @@ class Record:
         self.y = 0
         self.theta = 0
         self.trans_listener = tf.TransformListener()
-        self.food_publisher_list = {}
+        self.food_subscribe_list = {}
         self.fruit_locations = {}
         for food in FOOD_LABELS:
             # if not self.food_publisher_list.has_key(food):
@@ -48,6 +48,7 @@ class Record:
         fruit_name = msg.name
         self.fruit_locations[fruit_name] = (self.x, self.y, self.theta)
         rospy.set_param('fruit_locations', self.fruit_locations)
+        rospy.loginfo(fruit_name+" detected ! recording location...")
 
 
     def loop(self):
