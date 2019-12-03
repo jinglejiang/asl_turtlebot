@@ -250,10 +250,14 @@ class Supervisor:
                 self.x_g, self.y_g, self.theta_g = self.home # return to home location
         else:
             # remove this fruit from goals
-            for each_goal in self.goals:
-                if each_goal[0] == closest_fruit_location[0] and each_goal[1] == closest_fruit_location[1]:
-                    self.goals.remove(each_goal)
+            rmv_idx=None
+            for idx, goal in enumerate(self.goals):
+                if goal[0] == closest_fruit_location[0] and goal[1] == closest_fruit_location[1]:
+                    rmv_idx = idx
                     break
+            if rmv_idx is not None:
+                del self.goals[rmv_idx]
+                del self.goal_names[rmv_idx]
         
             # do not need to change current goal, because it is not reached!
 
