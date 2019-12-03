@@ -236,13 +236,15 @@ class Supervisor:
         """
         self.stop_fruit_start = rospy.get_rostime()
         self.mode = Mode.FRUITSTOP
-        # pop this fruit, which is already collected
+        rospy.loginfo("I find {}!! I will stop for a bit".format(fruit_name))
+
+        # now we got figure out if the fruit we are stopping at is our current goal or not
         closest_fruit_location = self.locations[fruit_name]
         if closest_fruit_location[0] == self.x_g and closest_fruit_location[1] == self.y_g:
             # this fruit is exactly the fruit we are looking for
             # directly go to next goal
-            if len(self.goals) > 1:
-                self.goals.pop()
+            self.goals.pop()
+            if len(self.goals) > 0:
                 self.x_g, self.y_g, self.theta_g = self.goals[-1]
             else:
                 self.x_g, self.y_g, self.theta_g = self.home # return to home location
@@ -252,6 +254,7 @@ class Supervisor:
                 if each_goal[0] == closest_fruit_location[0] and each_goal[1] == closest_fruit_location[1]:
                     self.goals.remove(each_goal)
                     break
+        
             # do not need to change current goal, because it is not reached!
 
     def has_stopped(self):
@@ -304,13 +307,6 @@ class Supervisor:
             # send zero velocity
             self.stay_idle()
 
-        elif self.mode == Mode.POSE:
-            # moving towards a desired pose
-            if self.close_to(self.x_g,self.y_g,self.theta_g):
-                self.mode = Mode.IDLE
-            else:
-                self.go_to_pose()
-
         elif self.mode == Mode.STOP:
             # at a stop sign
             if self.has_stopped():
@@ -336,6 +332,7 @@ class Supervisor:
         elif self.mode == Mode.NAV:
             if self.x_g == self.home[0] and self.y_g == self.home[1] and self.close_to_home:
                 self.mode = Mode.IDLE
+                rospy.loginfo("Mission Acoomplished! I am back home! I had lot of fun!")
             else:
                 flag, fruit_name = self.close_to_some_fruit()
                 if flag:
