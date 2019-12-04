@@ -23,3 +23,39 @@ roi:
   do_rectify: False
 ---
 
+
+
+cancel a goal in phase 1:
+rostopic pub goal_cancel std_msgs/String \"1\"
+
+
+how to launch autonomous
+roslaunch turtlebot3_navigation turtlebot3_navigation.launch 
+rosrun explore_lite explore _robot_base_frame:=base_footprint _costmap_topic:=map _visualize:=true _track_unknown_space:=true _min_frontier_size=1
+
+
+NOTE:
+your turtlebot3_navigation.launch should be
+
+
+<launch>
+  <arg name="model" default="burger"/>
+
+
+  <!-- move_base -->
+  <arg name="cmd_vel_topic" default="/cmd_vel" />
+  <arg name="odom_topic" default="odom" />
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+
+    <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find turtlebot3_navigation)/param/costmap_common_params_$(arg model).yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find turtlebot3_navigation)/param/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find turtlebot3_navigation)/param/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find turtlebot3_navigation)/param/move_base_params.yaml" command="load" />
+    <rosparam file="$(find turtlebot3_navigation)/param/dwa_local_planner_params.yaml" command="load" />
+
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+  </node>
+</launch>

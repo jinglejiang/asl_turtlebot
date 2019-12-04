@@ -88,7 +88,7 @@ class Navigator:
         self.at_thresh_theta = 2
 
         # trajectory smoothing
-        self.spline_alpha = 0.15
+        self.spline_alpha = 0.05
         self.traj_dt = 0.1
 
         # trajectory tracking controller parameters
