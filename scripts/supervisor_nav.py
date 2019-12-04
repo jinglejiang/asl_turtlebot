@@ -58,6 +58,8 @@ class Supervisor:
         if use_gazebo:
             self.x = 3.35
             self.y = 2.4
+        self.goals = []
+        self.goal_names = []
         self.theta = 0
         self.home = (self.x, self.y, self.theta)
         self.mode = Mode.IDLE
@@ -92,7 +94,7 @@ class Supervisor:
             # gazebo hardcode simulation
             self.locations = {'apple':(3, 1, 0), 'banana':(1.5, 2.7, 0), 'cake':(3, 2, 0)}
         else:
-            self.locations = rospy.get_param('fruit_locations')#{1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
+            self.locations = rospy.get_param('fruit_locations', None)#{1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
         # subscribe cmd input containing fruits to deliver, "apple,banana,..."
         rospy.Subscriber('/delivery_request', String, self.fruits_cmd_callback)
             

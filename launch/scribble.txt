@@ -1,1 +1,25 @@
 rosrun explore_lite explore robot_base_frame:=base_footprint costmap_topic:=costmap visualize:=true track_unknown_space:=true
+camera info
+header: 
+  seq: 50966
+  stamp: 
+    secs: 1455215008
+    nsecs:  21052461
+  frame_id: "raspicam"
+height: 308
+width: 410
+distortion_model: "plumb_bob"
+D: [0.1639958233797625, -0.271840030972792, 0.001055841660100477, -0.00166555973740089, 0.0]
+K: [322.0704122808738, 0.0, 199.2680620421962, 0.0, 320.8673986158544, 155.2533082600705, 0.0, 0.0, 1.0]
+R: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+P: [329.2483825683594, 0.0, 198.4101510452074, 0.0, 0.0, 329.1044006347656, 155.5057121208347, 0.0, 0.0, 0.0, 1.0, 0.0]
+binning_x: 0
+binning_y: 0
+roi: 
+  x_offset: 0
+  y_offset: 0
+  height: 0
+  width: 0
+  do_rectify: False
+---
+
