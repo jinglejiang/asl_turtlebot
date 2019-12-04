@@ -58,6 +58,8 @@ class Supervisor:
         if use_gazebo:
             self.x = 3.35
             self.y = 2.4
+        self.goals = []
+        self.goal_names = []
         self.theta = 0
         self.home = (self.x, self.y, self.theta)
         self.mode = Mode.IDLE
@@ -92,7 +94,7 @@ class Supervisor:
             # gazebo hardcode simulation
             self.locations = {'apple':(3, 1, 0), 'banana':(1.5, 2.7, 0), 'cake':(3, 2, 0)}
         else:
-            self.locations = rospy.get_param('fruit_locations')#{1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
+            self.locations = rospy.get_param('fruit_locations', None)#{1:(3, 1, 0), 2:(1.5, 2.7, 0), 3:(3, 2, 0)}
         # subscribe cmd input containing fruits to deliver, "apple,banana,..."
         rospy.Subscriber('/delivery_request', String, self.fruits_cmd_callback)
             
@@ -236,22 +238,29 @@ class Supervisor:
         """
         self.stop_fruit_start = rospy.get_rostime()
         self.mode = Mode.FRUITSTOP
-        # pop this fruit, which is already collected
+        rospy.loginfo("I find {}!! I will stop for a bit".format(fruit_name))
+
+        # now we got figure out if the fruit we are stopping at is our current goal or not
         closest_fruit_location = self.locations[fruit_name]
         if closest_fruit_location[0] == self.x_g and closest_fruit_location[1] == self.y_g:
             # this fruit is exactly the fruit we are looking for
             # directly go to next goal
-            if len(self.goals) > 1:
-                self.goals.pop()
+            self.goals.pop()
+            if len(self.goals) > 0:
                 self.x_g, self.y_g, self.theta_g = self.goals[-1]
             else:
                 self.x_g, self.y_g, self.theta_g = self.home # return to home location
         else:
             # remove this fruit from goals
-            for each_goal in self.goals:
-                if each_goal[0] == closest_fruit_location[0] and each_goal[1] == closest_fruit_location[1]:
-                    self.goals.remove(each_goal)
+            rmv_idx=None
+            for idx, goal in enumerate(self.goals):
+                if goal[0] == closest_fruit_location[0] and goal[1] == closest_fruit_location[1]:
+                    rmv_idx = idx
                     break
+            if rmv_idx is not None:
+                del self.goals[rmv_idx]
+                del self.goal_names[rmv_idx]
+        
             # do not need to change current goal, because it is not reached!
 
     def has_stopped(self):
@@ -304,13 +313,6 @@ class Supervisor:
             # send zero velocity
             self.stay_idle()
 
-        elif self.mode == Mode.POSE:
-            # moving towards a desired pose
-            if self.close_to(self.x_g,self.y_g,self.theta_g):
-                self.mode = Mode.IDLE
-            else:
-                self.go_to_pose()
-
         elif self.mode == Mode.STOP:
             # at a stop sign
             if self.has_stopped():
@@ -336,6 +338,7 @@ class Supervisor:
         elif self.mode == Mode.NAV:
             if self.x_g == self.home[0] and self.y_g == self.home[1] and self.close_to_home:
                 self.mode = Mode.IDLE
+                rospy.loginfo("Mission Acoomplished! I am back home! I had lot of fun!")
             else:
                 flag, fruit_name = self.close_to_some_fruit()
                 if flag:

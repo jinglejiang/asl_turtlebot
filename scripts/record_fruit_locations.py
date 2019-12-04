@@ -62,6 +62,7 @@ class Record:
                 self.theta = euler[2]
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 pass
+                
     def run(self):
         rate = rospy.Rate(10)
         while not rospy.is_shutdown():
