@@ -1,0 +1,13 @@
+ <launch>
+ 	<arg name="om_max" default="0.4"/>
+ 	<arg name="v_max" default="0.2"/>
+
+    <node pkg="asl_turtlebot" type="navigator_sjy.py" name="asl_navigator" output="screen">
+    	<param name="om_max" value="$(arg om_max)"/>
+    	<param name="v_max" value="$(arg v_max)"/>
+    </node>
+
+    <node pkg="asl_turtlebot" type="record_fruit_locations.py" name="record_fruit_locations" />
+
+    <node pkg="asl_turtlebot" type="goal_commander_sjy.py" name="goal_commander_sjy" />
+</launch>
