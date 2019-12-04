@@ -25,7 +25,7 @@ class GoalPoseCommander:
         self.marker_pub = rospy.Publisher('marker_topic', Marker, queue_size=10)
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.rviz_goal_callback)
         rospy.Subscriber('/goal_reach', String, self.release_goal)
-        #rospy.Subscriber('/goal_cancel', String, self.release_goal)
+        rospy.Subscriber('/goal_cancel', String, self.release_goal)
         
     def rviz_goal_callback(self, msg):
         """ callback for a pose goal sent through rviz """
