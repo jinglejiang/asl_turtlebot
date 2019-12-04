@@ -10,4 +10,6 @@
     <node pkg="asl_turtlebot" type="record_fruit_locations.py" name="record_fruit_locations" />
 
     <node pkg="asl_turtlebot" type="goal_commander_sjy.py" name="goal_commander_sjy" />
+
+    <node pkg="asl_turtlebot" type="detector_viz.py" name="detector_viz" />
 </launch>
