@@ -177,6 +177,22 @@ class Detector:
 
         return dist
 
+    def estimate_distance_minimum(self, thetaleft, thetaright, ranges):
+        """ estimates the distance of an object in between two angles
+        using lidar measurements """
+
+        leftray_indx = min(max(0,int(thetaleft/self.laser_angle_increment)),len(ranges))
+        rightray_indx = min(max(0,int(thetaright/self.laser_angle_increment)),len(ranges))
+
+        if leftray_indx<rightray_indx:
+            meas = ranges[rightray_indx:] + ranges[:leftray_indx]
+        else:
+            meas = ranges[rightray_indx:leftray_indx]
+
+        meas = meas[meas>0]
+        return min(meas)
+        
+
     def camera_callback(self, msg):
         """ callback for camera images """
 

@@ -1,15 +1,21 @@
  <launch>
  	<arg name="om_max" default="0.4"/>
- 	<arg name="v_max" default="0.2"/>
+ 	<arg name="v_max" default="0.1"/>
+
+ 	 <rosparam param="sim">false</rosparam>
+  	<rosparam param="map">true</rosparam>
+  	<rosparam param="use_tf">true</rosparam>
 
     <node pkg="asl_turtlebot" type="navigator_sjy.py" name="asl_navigator" output="screen">
     	<param name="om_max" value="$(arg om_max)"/>
     	<param name="v_max" value="$(arg v_max)"/>
     </node>
 
-    <node pkg="asl_turtlebot" type="record_fruit_locations.py" name="record_fruit_locations" />
+    <node pkg="asl_turtlebot" type="record_fruit_locations.py" name="record_fruit_locations" output="screen" />
 
     <node pkg="asl_turtlebot" type="goal_commander_sjy.py" name="goal_commander_sjy" />
 
     <node pkg="asl_turtlebot" type="detector_viz.py" name="detector_viz" />
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find asl_turtlebot)/rviz/my_nav.rviz"/>
 </launch>

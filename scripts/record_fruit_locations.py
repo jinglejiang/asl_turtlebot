@@ -11,7 +11,7 @@ import tf
 
 FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad', 'bottle', 'stop_sign', 'cup']
 use_gazebo = rospy.get_param("sim")
-
+mapping = rospy.get_param("map")
 
 class Record:
     """record fruit locations if detected"""
