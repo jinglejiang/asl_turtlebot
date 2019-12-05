@@ -9,7 +9,7 @@ from asl_turtlebot.msg import DetectedObject
 import tf
 
 
-FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad', 'bottle', 'stop_sign', 'cup']
+FOOD_LABELS = ['banana', 'apple','sandwich', 'orange', 'broccoli', 'carrot', 'hot_dog', 'pizza', 'donut', 'cake', 'salad', 'bottle', 'stop_sign', 'cup', 'sports_ball']
 use_gazebo = rospy.get_param("sim")
 mapping = rospy.get_param("map")
 
