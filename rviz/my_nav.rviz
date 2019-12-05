@@ -8,7 +8,7 @@ Panels:
         - /Status1
         - /TF1
         - /TF1/Frames1
-        - /smoothed_path1
+        - /destination1
         - /planned_path1
       Splitter Ratio: 0.5
     Tree Height: 565
@@ -123,7 +123,7 @@ Visualization Manager:
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /marker_topic
-      Name: Marker
+      Name: destination
       Namespaces:
         {}
       Queue Size: 100
@@ -199,7 +199,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.97831321
+      Distance: 6.58410215
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
