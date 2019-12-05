@@ -2,7 +2,7 @@
 
 import rospy
 from gazebo_msgs.msg import ModelStates
-from std_msgs.msg import Float32MultiArray, String, Int32MultiArray
+from std_msgs.msg import Float32MultiArray, String, Int32MultiArray, Bool
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
 from asl_turtlebot.msg import DetectedObject
 import tf
@@ -27,7 +27,7 @@ STOP_TIME = 10
 
 # minimum distance from a stop sign to obey it
 STOP_MIN_DIST = 3
-FRUIT_STOP_MIN_DIST = 3
+FRUIT_STOP_MIN_DIST = 2
 
 # time taken to cross an intersection
 CROSSING_TIME = 3
@@ -71,7 +71,7 @@ class Supervisor:
         self.nav_goal_publisher = rospy.Publisher('/cmd_nav', Pose2D, queue_size=10)
         # command vel (used for idling)
         self.cmd_vel_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-
+        self.allow_nav_publisher = rospy.Publisher('/allow_nav', Bool, queue_size=10)
         # subscribers
         # stop sign detector
         rospy.Subscriber('/detector/stop_sign', DetectedObject, self.stop_sign_detected_callback)
@@ -153,11 +153,12 @@ class Supervisor:
         """ callback for when the detector has found a stop sign. Note that
         a distance of 0 can mean that the lidar did not pickup the stop sign at all """
 
-        # distance of the stop sign
+        # distance of the stop 
         dist = msg.distance
 
         # if close enough and in nav mode, stop
-        if dist > 0 and dist < STOP_MIN_DIST and self.mode == Mode.NAV:
+        print("stop_sign!!!!!", dist)
+        if dist >= 0 and dist < STOP_MIN_DIST and self.mode == Mode.NAV:
             self.init_stop_sign()
     
     def fruits_cmd_callback(self, msg):
@@ -230,6 +231,9 @@ class Supervisor:
         """ initiates a stop sign maneuver """
 
         self.stop_sign_start = rospy.get_rostime()
+        msg = Bool()
+        msg.data = False
+        self.allow_nav_publisher.publish(msg)
         self.mode = Mode.STOP
     
     def init_stop_fruit(self, fruit_name):
@@ -276,6 +280,10 @@ class Supervisor:
     def init_crossing(self):
         """ initiates an intersection crossing maneuver """
 
+        msg = Bool()
+        msg.data = True
+        self.allow_nav_publisher.publish(msg)
+
         self.cross_start = rospy.get_rostime()
         self.mode = Mode.CROSS
 
@@ -314,6 +322,7 @@ class Supervisor:
             self.stay_idle()
 
         elif self.mode == Mode.STOP:
+            rospy.loginfo("STOPPING !!!!")
             # at a stop sign
             if self.has_stopped():
                 self.init_crossing()

@@ -3,7 +3,7 @@
 import rospy
 from nav_msgs.msg import OccupancyGrid, MapMetaData, Path
 from geometry_msgs.msg import Twist, PoseArray, Pose2D, PoseStamped
-from std_msgs.msg import Float32MultiArray, String
+from std_msgs.msg import Float32MultiArray, String, Bool
 import tf
 import numpy as np
 from numpy import linalg
@@ -97,6 +97,11 @@ class Navigator:
         # heading controller parameters
         self.kp_th = 2.
 
+        # from supervisor_nav
+        self.allow = True
+        rospy.Subscriber('/allow_nav', Bool, self.allow_callback)
+        
+
         self.traj_controller = TrajectoryTracker(self.kpx, self.kpy, self.kdx, self.kdy, self.v_max, self.om_max)
         self.pose_controller = PoseController(0., 0., 0., self.v_max, self.om_max)
         self.heading_controller = HeadingController(self.kp_th, self.om_max)
@@ -111,13 +116,16 @@ class Navigator:
         self.trans_listener = tf.TransformListener()
 
         self.cfg_srv = Server(NavigatorConfig, self.dyn_cfg_callback)
-
+        
         rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
         rospy.Subscriber('/map_metadata', MapMetaData, self.map_md_callback)
         rospy.Subscriber('/cmd_nav', Pose2D, self.cmd_nav_callback)
 
         print "finished init"
-        
+
+    def allow_callback(self, msg):
+        self.allow = msg.data
+
     def dyn_cfg_callback(self, config, level):
         rospy.loginfo("Reconfigure Request: k1:{k1}, k2:{k2}, k3:{k3}, v_max:{v_max}".format(**config))
         self.pose_controller.k1 = config["k1"]
@@ -160,7 +168,7 @@ class Navigator:
                                                   self.map_height,
                                                   self.map_origin[0],
                                                   self.map_origin[1],
-                                                  8,
+                                                  35,
                                                   self.map_probs)
             if self.x_g is not None:
                 # if we have a goal to plan to, replan
@@ -255,7 +263,10 @@ class Navigator:
         cmd_vel = Twist()
         cmd_vel.linear.x = V
         cmd_vel.angular.z = om
-        self.nav_vel_pub.publish(cmd_vel)
+        if self.allow:
+            self.nav_vel_pub.publish(cmd_vel)
+        else:
+            rospy.loginfo("NOT ALLOWED!!!!!")
 
     def get_current_plan_time(self):
         t = (rospy.get_rostime()-self.current_plan_start_time).to_sec()
